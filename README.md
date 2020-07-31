@@ -1,0 +1,1 @@
+# Food-Detector-Meraki-Snapshot-API-MQTT
