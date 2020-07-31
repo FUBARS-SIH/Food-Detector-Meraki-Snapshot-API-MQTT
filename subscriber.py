@@ -1,22 +1,31 @@
 import paho.mqtt.client as mqtt
 import json
+from configparser import ConfigParser
 
+config = ConfigParser()
+config.read('config.ini')
+broker, port, topic = (
+    config.get('mqtt','broker'),
+    int(config.get('mqtt','port')),
+    config.get('mqtt','topic')
+)
+
+#create a client
 client = mqtt.Client()
-broker, topic = 'mqtt.eclipse.org', "food_detection"
 
 def  on_connect(client, userData, flags, rc):
     if rc == 0:
-        print("Connected to the broker. OK")
+        print("[INFO] Connected to the broker. OK")
         client.subscribe(topic)
     else:
-        print(f"Bad connection returned code {rc}")
+        print(f"[INFO] Bad connection returned code {rc}")
 
 def  on_log(client, userData, level, buf):
     print(f"[LOG] {buf}")
 
 def on_disconnect(client, userData, flags, rc=0):
     client.loop_stop()
-    print(f"Disconnected result code {str(rc)}")
+    print(f"[INFO] Disconnected result code {str(rc)}")
 
 def on_message(client, userData, msg):
     topic = msg.topic
@@ -28,6 +37,6 @@ client.on_connect = on_connect
 client.on_disconnect = on_disconnect
 client.on_message = on_message
 
-print("Connecting to the broker")
-client.connect(broker,1883,60)
+print("[INFO] Connecting to the broker")
+client.connect(broker,port)
 client.loop_forever()

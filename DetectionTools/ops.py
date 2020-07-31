@@ -1,8 +1,11 @@
-import tensorflow as tf
 import os
+import tensorflow as tf
 from PIL import Image
 from io import BytesIO
 import numpy as np
+import json
+
+category_index = {}
 
 #source:https://github.com/tensorflow/models/blob/master/research/object_detection/colab_tutorials/inference_from_saved_model_tf2_colab.ipynb
 def get_image_tensor(path):
@@ -62,10 +65,15 @@ def plot_detections(image_np,
 		plt.imshow(image_np_with_annotations)
 
 def load_model(model_dir):
-	"""loads a graph based tf saved model"""
+	"""
+	Loads a graph based tf saved model and also the classes for detection.
 
+	Accepts:
+	model_dir => directory in which model's pb or pbtxt file is placed
+	"""
+
+	
 	return tf.saved_model.load(os.path.join(os.getcwd(),model_dir))
-
 
 def detect_image(detect_fn,image_path):
 	"""Returns the detections for an image"""
@@ -73,24 +81,25 @@ def detect_image(detect_fn,image_path):
 	image_tensor = get_image_tensor(image_path)
 	return detect_fn(image_tensor)
 	
-def get_detected_classes(detect_fn, image_loc, threshold=0.66):
-	"""Returns detections which have at least a certain threshold"""
+def get_detected_classes(detect_fn, category_index, image_loc, threshold=0.66):
+	"""
+	Returns detections for an image, which have at least a certain threshold.
+
+	Accepts:
+	detect_fn => Detect function obtained from tf.saved_model.load(model_dir)
+	category_index => dictionary with the class index and name
+	image_loc => Location of the image
+	threshold => Threshold value from which a detection can be considered (default = 0.66 ) 
+	"""
 
 	detections = detect_image(detect_fn, image_loc)
 
 	classes, scores = (
         detections['detection_classes'][0].numpy().astype(np.int32),
         detections['detection_scores'][0].numpy()
-    )
+	)
 
 	num_detections = len([ score for score in scores if score > threshold ])
 
-	category_index = {
-	    1:{'id':1,'name':'egg'},
-	    2:{'id':2,'name':'roti'},
-	    3:{'id':3,'name':'rice'},
-	    4:{'id':4,'name':'curry'},
-	}
-
-	classes = [ category_index[i]['name'] for i in classes[:num_detections] ]
+	classes = [ category_index[str(i)] for i in classes[:num_detections] ]
 	return list(set(classes))
